@@ -1,0 +1,26 @@
+spin_manifest_version = 2
+
+[application]
+authors = ["aldwinyu"]
+description = ""
+name = "echo-bot"
+version = "0.1.0"
+
+[[trigger.http]]
+route = "/..."
+component = "echo-bot"
+
+[variables]
+telegram_bot_token = { required = true }
+
+[component.echo-bot]
+source = "target/echo-bot.wasm"
+exclude_files = ["**/node_modules"]
+allowed_outbound_hosts = [ "https://api.telegram.org" ]
+
+[component.echo-bot.build]
+command = "npm run build"
+watch = ["src/**/*.ts", "package.json"]
+
+[component.echo-bot.variables]
+telegram_bot_token = "{{ telegram_bot_token }}"
