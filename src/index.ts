@@ -5,11 +5,15 @@ import {
   Config,
 } from "@fermyon/spin-sdk";
 
-const OAUTH_URL =
-  "https://accounts.google.com/o/oauth2/auth?client_id=136721311837-gbbuar32vp811u532o9907d7nhfelt2g.apps.googleusercontent.com&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly&redirect_uri=https%3A%2F%2Fmail-sniffer.fermyon.app%2Foauth%2Fcallback&response_type=code&state=";
+const OAUTH_URL = "https://accounts.google.com/o/oauth2/auth";
 const HELP_MESSAGE =
   "Welcome to Mail Sniffer! Here are the commands you can use:\n\n/login - Login to your Google account\n/getmail - Get your Gmail rundown\n/help - Get this message";
 const TELEGRAM_API_URL = "https://api.telegram.org";
+const OAUTH_CLIENT_ID =
+  "136721311837-gbbuar32vp811u532o9907d7nhfelt2g.apps.googleusercontent.com";
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+const OAUTH_REDIRECT_URI = "https://mail-sniffer.fermyon.app/oauth/callback";
+const OAUTH_RESPONSE_TYPE = "code";
 
 interface TelegramUpdate {
   message?: {
@@ -39,8 +43,7 @@ async function sendTextMessage(text: string, chatId: string, botToken: string) {
 function handleLogin(userId: string, chatId: string, botToken: string) {
   sendTextMessage(
     "Please login to your Google account by clicking on the following link: \n" +
-      OAUTH_URL +
-      userId,
+      getOAuthUrl(userId),
     chatId,
     botToken
   );
@@ -59,6 +62,16 @@ function handleHelp(hasMessage: boolean, chatId: string, botToken: string) {
 
 function handleGetMail(userId: string, chatId: string, botToken: string) {
   sendTextMessage("This feature is not ready yet.", chatId, botToken);
+}
+
+function getOAuthUrl(userId: string) {
+  let url = new URL(OAUTH_URL);
+  url.searchParams.append("client_id", OAUTH_CLIENT_ID);
+  url.searchParams.append("scope", OAUTH_SCOPE);
+  url.searchParams.append("redirect_uri", OAUTH_REDIRECT_URI);
+  url.searchParams.append("response_type", OAUTH_RESPONSE_TYPE);
+  url.searchParams.append("state", userId);
+  return url.toString() + "?" + url.searchParams.toString();
 }
 
 export const handleRequest: HandleRequest = async function (
