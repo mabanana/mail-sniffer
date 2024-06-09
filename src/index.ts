@@ -7,7 +7,7 @@ import {
 
 const OAUTH_URL = "https://accounts.google.com/o/oauth2/auth";
 const HELP_MESSAGE =
-  "Welcome to Mail Sniffer! Here are the commands you can use:\n\n/login - Login to your Google account\n/getmail - Get your Gmail rundown\n/help - Get this message";
+  "Welcome to Mail Sniffer! Here are the commands you can use:\n\n/login - Login to your Google account\n/help - Get this message";
 const TELEGRAM_API_URL = "https://api.telegram.org";
 const OAUTH_CLIENT_ID =
   "136721311837-gbbuar32vp811u532o9907d7nhfelt2g.apps.googleusercontent.com";
@@ -60,10 +60,6 @@ function handleHelp(hasMessage: boolean, chatId: string, botToken: string) {
   sendTextMessage(HELP_MESSAGE, chatId, botToken);
 }
 
-function handleGetMail(userId: string, chatId: string, botToken: string) {
-  sendTextMessage("This feature is not ready yet.", chatId, botToken);
-}
-
 function getOAuthUrl(userId: string) {
   let url = new URL(OAUTH_URL);
   url.searchParams.append("client_id", OAUTH_CLIENT_ID);
@@ -92,9 +88,6 @@ export const handleRequest: HandleRequest = async function (
     return { status: 200 };
   } else if (body.message.text.toLowerCase().startsWith("/login")) {
     handleLogin(userId, chatId, botToken);
-    return { status: 200 };
-  } else if (body.message.text.toLowerCase().startsWith("/getmail")) {
-    handleGetMail(userId, chatId, botToken);
     return { status: 200 };
   } else {
     await handleHelp(
