@@ -1,10 +1,10 @@
 {
-  "name": "echo-bot",
+  "name": "mail-sniffer",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx webpack --mode=production && npx mkdirp target && spin js2wasm -o target/echo-bot.wasm dist/spin.js",
+    "build": "npx webpack --mode=production && npx mkdirp target && spin js2wasm -o target/mail-sniffer.wasm dist/spin.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
