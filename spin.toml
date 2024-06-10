@@ -16,10 +16,21 @@ component = "telegram-bot"
 [component.telegram-bot]
 source = "telegram-bot/target/telegram-bot.wasm"
 allowed_outbound_hosts = [ "https://api.telegram.org" ]
-exclude_files = ["**/node_modules"]
 [component.telegram-bot.build]
 command = "npm run build"
 workdir = "telegram-bot"
 watch = ["src/**/*.ts"]
 [component.telegram-bot.variables]
 telegram_bot_token = "{{ telegram_bot_token }}"
+
+[[trigger.http]]
+route = "/oauth"
+component = "oauth"
+
+[component.oauth]
+source = "oauth/target/oauth.wasm"
+[component.oauth.build]
+command = "npm run build"
+workdir = "oauth"
+watch = ["src/**/*.ts"]
+
