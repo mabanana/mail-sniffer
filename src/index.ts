@@ -27,8 +27,12 @@ interface TelegramUpdate {
   };
 }
 
-async function sendTextMessage(text: string, chatId: string, botToken: string) {
-  return fetch(TELEGRAM_API_URL + "/bot" + botToken + "/sendMessage", {
+async function sendTextMessage(
+  text: string,
+  chatId: string,
+  botToken: string
+): Promise<void> {
+  fetch(TELEGRAM_API_URL + "/bot" + botToken + "/sendMessage", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,7 +44,7 @@ async function sendTextMessage(text: string, chatId: string, botToken: string) {
   });
 }
 
-function handleLogin(userId: string, chatId: string, botToken: string) {
+function handleLogin(userId: string, chatId: string, botToken: string): void {
   sendTextMessage(
     "Please login to your Google account by clicking on the following link: \n" +
       getOAuthUrl(userId),
@@ -49,7 +53,11 @@ function handleLogin(userId: string, chatId: string, botToken: string) {
   );
 }
 
-function handleHelp(hasMessage: boolean, chatId: string, botToken: string) {
+function handleHelp(
+  hasMessage: boolean,
+  chatId: string,
+  botToken: string
+): void {
   if (hasMessage) {
     sendTextMessage(
       "I did not understand you message, please refer to these instructions: ",
@@ -60,7 +68,7 @@ function handleHelp(hasMessage: boolean, chatId: string, botToken: string) {
   sendTextMessage(HELP_MESSAGE, chatId, botToken);
 }
 
-function getOAuthUrl(userId: string) {
+function getOAuthUrl(userId: string): string {
   let url = new URL(OAUTH_URL);
   url.searchParams.append("client_id", OAUTH_CLIENT_ID);
   url.searchParams.append("scope", OAUTH_SCOPE);
