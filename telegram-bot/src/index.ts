@@ -32,7 +32,7 @@ async function sendTextMessage(
   chatId: string,
   botToken: string
 ): Promise<void> {
-  fetch(TELEGRAM_API_URL + "/bot" + botToken + "/sendMessage", {
+  await fetch(TELEGRAM_API_URL + "/bot" + botToken + "/sendMessage", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,8 +44,12 @@ async function sendTextMessage(
   });
 }
 
-function handleLogin(userId: string, chatId: string, botToken: string): void {
-  sendTextMessage(
+async function handleLogin(
+  userId: string,
+  chatId: string,
+  botToken: string
+): Promise<void> {
+  await sendTextMessage(
     "Please login to your Google account by clicking on the following link: \n" +
       getOAuthUrl(userId),
     chatId,
@@ -53,19 +57,19 @@ function handleLogin(userId: string, chatId: string, botToken: string): void {
   );
 }
 
-function handleHelp(
+async function handleHelp(
   hasMessage: boolean,
   chatId: string,
   botToken: string
-): void {
+): Promise<void> {
   if (hasMessage) {
-    sendTextMessage(
+    await sendTextMessage(
       "I did not understand you message, please refer to these instructions: ",
       chatId,
       botToken
     );
   }
-  sendTextMessage(HELP_MESSAGE, chatId, botToken);
+  await sendTextMessage(HELP_MESSAGE, chatId, botToken);
 }
 
 function getOAuthUrl(userId: string): string {
@@ -95,7 +99,7 @@ export const handleRequest: HandleRequest = async function (
     await handleHelp(false, chatId, botToken);
     return { status: 200 };
   } else if (body.message.text.toLowerCase().startsWith("/login")) {
-    handleLogin(userId, chatId, botToken);
+    await handleLogin(userId, chatId, botToken);
     return { status: 200 };
   } else {
     await handleHelp(
