@@ -8,6 +8,7 @@ version = "0.1.0"
 
 [variables]
 telegram_bot_token = { required = true }
+google_oauth_client_secret = { required = true }
 
 [[trigger.http]]
 route = "/"
@@ -29,11 +30,12 @@ component = "oauth"
 
 [component.oauth]
 source = "oauth/target/oauth.wasm"
-allowed_outbound_hosts = [ "https://api.telegram.org" ]
+allowed_outbound_hosts = [ "https://api.telegram.org", "https://oauth2.googleapis.com" ]
 [component.oauth.build]
 command = "npm run build"
 workdir = "oauth"
 watch = ["src/**/*.ts"]
 [component.oauth.variables]
 telegram_bot_token = "{{ telegram_bot_token }}"
+google_oauth_client_secret = "{{ google_oauth_client_secret }}"
 

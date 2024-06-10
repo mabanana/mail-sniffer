@@ -5,7 +5,7 @@ import {
   Config,
 } from "@fermyon/spin-sdk";
 
-const OAUTH_URL = "https://accounts.google.com/o/oauth2/auth";
+const OAUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const HELP_MESSAGE =
   "Welcome to Mail Sniffer! Here are the commands you can use:\n\n/login - Login to your Google account\n/help - Get this message";
 const TELEGRAM_API_URL = "https://api.telegram.org";
@@ -14,6 +14,7 @@ const OAUTH_CLIENT_ID =
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 const OAUTH_REDIRECT_URI = "https://mail-sniffer.fermyon.app/oauth/callback";
 const OAUTH_RESPONSE_TYPE = "code";
+const OAUTH_ACCESS_TYPE = "offline";
 
 interface TelegramUpdate {
   message?: {
@@ -79,6 +80,7 @@ function getOAuthUrl(userId: string): string {
   url.searchParams.append("redirect_uri", OAUTH_REDIRECT_URI);
   url.searchParams.append("response_type", OAUTH_RESPONSE_TYPE);
   url.searchParams.append("state", userId);
+  url.searchParams.append("access_type", OAUTH_ACCESS_TYPE);
   return url.toString() + "?" + url.searchParams.toString();
 }
 
@@ -86,7 +88,7 @@ export const handleRequest: HandleRequest = async function (
   request: HttpRequest
 ): Promise<HttpResponse> {
   const botToken = Config.get("telegram_bot_token");
-  const body: TelegramUpdate = request.json();
+  const body: TelegramUpdate = await request.json();
 
   if (body.message === undefined) {
     return { status: 200 };
@@ -95,6 +97,7 @@ export const handleRequest: HandleRequest = async function (
   const userId = body.message.from.id;
 
   // handle /commands and returns help message if command is not recognized
+  // TODO: add /logout that deletes the key:value pair from the database
   if (body.message.text === undefined) {
     await handleHelp(false, chatId, botToken);
     return { status: 200 };
