@@ -7,7 +7,7 @@ name = "mail-sniffer"
 version = "0.1.0"
 
 [[trigger.http]]
-route = "/mail-sniffer/..."
+route = "/..."
 component = "mail-sniffer"
 
 [variables]
