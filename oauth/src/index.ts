@@ -3,13 +3,41 @@ import {
   HttpRequest,
   HttpResponse,
   Config,
+  Kv,
 } from "@fermyon/spin-sdk";
+
+interface tokenAPIResponse {
+  access_token: string;
+  expires_in: number;
+  refresh_token: string;
+  scope: string;
+  token_type: string;
+}
 
 const TELEGRAM_API_URL = "https://api.telegram.org";
 const OAUTH_CLIENT_ID =
   "136721311837-gbbuar32vp811u532o9907d7nhfelt2g.apps.googleusercontent.com";
 const OAUTH_REDIRECT_URI = "https://mail-sniffer.fermyon.app/oauth/callback";
 const OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
+
+async function kvPost(key: string, value: string): Promise<void> {
+  const store = Kv.openDefault();
+  store.set(key, value || new Uint8Array().buffer);
+  //console.log("kvPost {key: ", key, ", value: ", value, "}");
+}
+
+async function kvGet(key: string): Promise<string> {
+  const store = Kv.openDefault();
+  const keys = store.getKeys();
+  const decoder = new TextDecoder();
+  const res: Record<string, any> = {};
+  keys.map((k) => {
+    if (k != "kv-credentials") {
+      res[k] = decoder.decode(store.get(k) || new Uint8Array());
+    }
+  });
+  return res[key] || null;
+}
 
 async function sendTextMessage(
   text: string,
@@ -28,7 +56,6 @@ async function sendTextMessage(
   });
 }
 
-// TODO: figure out why it doesnt return a refresh token
 async function fetchAccessToken(
   code: string,
   clientSecret: string
@@ -55,6 +82,7 @@ async function fetchAccessToken(
   //TODO: check if access token is in response, otherwise return error
   return JSON.stringify(await response.json());
 }
+
 export const handleRequest: HandleRequest = async function (
   request: HttpRequest
 ): Promise<HttpResponse> {
@@ -66,10 +94,14 @@ export const handleRequest: HandleRequest = async function (
   if (code === null || userId === null) {
     return { status: 400 };
   }
-
+  const accessToken = await kvGet(userId);
+  if (accessToken !== null) {
+    console.log("Overwriting existing access token...");
+  }
   const tokenAPIResponse = await fetchAccessToken(code, clientSecret);
-  console.log(tokenAPIResponse);
-  // TODO: store access token as userId : accessToken
+  const tokenAPIResponseJSON = JSON.parse(tokenAPIResponse) as tokenAPIResponse;
+  //console.log(tokenAPIResponse);
+  await kvPost(userId, tokenAPIResponseJSON["access_token"]);
   await sendTextMessage("You have successfully logged in!", userId, botToken);
   return { status: 200 }; // TODO: return webpage that says "You have successfully logged in!"
 };

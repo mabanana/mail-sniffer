@@ -31,6 +31,7 @@ component = "oauth"
 [component.oauth]
 source = "oauth/target/oauth.wasm"
 allowed_outbound_hosts = [ "https://api.telegram.org", "https://oauth2.googleapis.com" ]
+key_value_stores = ["default"]
 [component.oauth.build]
 command = "npm run build"
 workdir = "oauth"
