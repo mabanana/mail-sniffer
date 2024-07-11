@@ -6,7 +6,7 @@ import {
   Kv,
 } from "@fermyon/spin-sdk";
 
-interface tokenAPIResponse {
+interface tokenAPIResponsePayload {
   access_token: string;
   expires_in: number;
   refresh_token: string;
@@ -58,15 +58,21 @@ async function sendTextMessage(
 
 async function fetchAccessToken(
   code: string,
-  clientSecret: string
-): Promise<string> {
+  clientSecret: string,
+  local: boolean = false
+): Promise<string | null> {
+  let redirect_uri = OAUTH_REDIRECT_URI;
+  if (local) {
+    redirect_uri = "http://127.0.0.1:3000/oauth/callback";
+  }
   const body: Record<string, string> = {
     code: code,
     client_secret: clientSecret,
     client_id: OAUTH_CLIENT_ID,
-    redirect_uri: OAUTH_REDIRECT_URI,
+    redirect_uri: redirect_uri,
     grant_type: "authorization_code",
   };
+
   var content = Object.keys(body)
     .map(function (key) {
       return encodeURIComponent(key) + "=" + encodeURIComponent(body[key]);
@@ -79,8 +85,14 @@ async function fetchAccessToken(
     },
     body: content,
   });
-  //TODO: check if access token is in response, otherwise return error
-  return JSON.stringify(await response.json());
+  // check if the response is valid
+  if (response.status !== 200) {
+    console.log("Failed to fetch access token: " + response.status);
+    return null;
+  }
+  const responseJson = await response.json();
+  return JSON.stringify(responseJson); // has access token and refresh token, no need to JSON.parse
+  // does not contain a refresh token if the previous refresh token has not expired
 }
 
 export const handleRequest: HandleRequest = async function (
@@ -91,17 +103,46 @@ export const handleRequest: HandleRequest = async function (
   const url = new URL(request.headers["spin-full-url"]);
   const code = url.searchParams.get("code");
   const userId = url.searchParams.get("state");
+
   if (code === null || userId === null) {
     return { status: 400 };
   }
-  const accessToken = await kvGet(userId);
-  if (accessToken !== null) {
-    console.log("Overwriting existing access token...");
+  const storedTokenResponse = await kvGet(userId);
+  const storedTokenResponseJSON = JSON.parse(storedTokenResponse);
+  if (storedTokenResponse !== null) {
+    console.log("Overwriting existing token...");
+    console.log("Previous fetch token response: ");
+    console.log(storedTokenResponse + "\n");
   }
-  const tokenAPIResponse = await fetchAccessToken(code, clientSecret);
-  const tokenAPIResponseJSON = JSON.parse(tokenAPIResponse) as tokenAPIResponse;
-  //console.log(tokenAPIResponse);
-  await kvPost(userId, tokenAPIResponseJSON["access_token"]);
+  let tokenAPIResponse;
+  if (url.host === "127.0.0.1:3000") {
+    tokenAPIResponse = await fetchAccessToken(code, clientSecret, true);
+  } else {
+    tokenAPIResponse = await fetchAccessToken(code, clientSecret);
+  }
+
+  if (tokenAPIResponse === null) {
+    await sendTextMessage("You have failed to log in.", userId, botToken);
+    return { status: 400 };
+  }
+  console.log("Fetch token response: ");
+  console.log(tokenAPIResponse + "\n");
+  const tokentAPIResponseJSON = JSON.parse(
+    tokenAPIResponse
+  ) as tokenAPIResponsePayload;
+  const postBody = {
+    access_token: tokentAPIResponseJSON["access_token"] ?? "",
+    refresh_token:
+      tokentAPIResponseJSON["refresh_token"] ??
+      storedTokenResponseJSON["refresh_token"],
+  };
+  if (postBody["refresh_token"] === undefined) {
+    console.log(
+      "Did not log in properly. Please unlink your google account from mail-sniffer and log in again."
+    );
+    return { status: 400 };
+  }
+  await kvPost(userId, JSON.stringify(postBody)); // save json string with access and refresh token
   await sendTextMessage("You have successfully logged in!", userId, botToken);
   return { status: 200 }; // TODO: return webpage that says "You have successfully logged in!"
 };

@@ -52,7 +52,10 @@ async function handleLogin(
 ): Promise<void> {
   await sendTextMessage(
     "Please login to your Google account by clicking on the following link: \n" +
-      getOAuthUrl(userId),
+      getOAuthUrl(userId) +
+      "\n" +
+      "Or use the following link to login locally: \n" +
+      getLocalOAuthUrl(userId),
     chatId,
     botToken
   );
@@ -78,6 +81,20 @@ function getOAuthUrl(userId: string): string {
   url.searchParams.append("client_id", OAUTH_CLIENT_ID);
   url.searchParams.append("scope", OAUTH_SCOPE);
   url.searchParams.append("redirect_uri", OAUTH_REDIRECT_URI);
+  url.searchParams.append("response_type", OAUTH_RESPONSE_TYPE);
+  url.searchParams.append("state", userId);
+  url.searchParams.append("access_type", OAUTH_ACCESS_TYPE);
+  return url.toString() + "?" + url.searchParams.toString();
+}
+
+function getLocalOAuthUrl(userId: string): string {
+  let url = new URL(OAUTH_URL);
+  url.searchParams.append("client_id", OAUTH_CLIENT_ID);
+  url.searchParams.append("scope", OAUTH_SCOPE);
+  url.searchParams.append(
+    "redirect_uri",
+    "http://127.0.0.1:3000/oauth/callback"
+  );
   url.searchParams.append("response_type", OAUTH_RESPONSE_TYPE);
   url.searchParams.append("state", userId);
   url.searchParams.append("access_type", OAUTH_ACCESS_TYPE);
