@@ -9,7 +9,16 @@ import { handleLogin, handleHelp, TelegramUpdate } from "./defaults";
 export const handleRequest: HandleRequest = async function (
   request: HttpRequest
 ): Promise<HttpResponse> {
-  const body: TelegramUpdate = request.json();
+  let body: TelegramUpdate;
+  try {
+    body = request.json() as TelegramUpdate;
+  } catch (err: any) {
+    if (err.message === undefined) {
+      return { status: 400, body: "Cannot parse request" };
+    } else {
+      return { status: 400, body: "Cannot parse request: " + err.message };
+    }
+  }
   const botToken = Config.get("telegram_bot_token");
   if (body.message === undefined) {
     return { status: 400 };
