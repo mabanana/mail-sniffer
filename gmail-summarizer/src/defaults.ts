@@ -44,7 +44,7 @@ interface GmailMessageResource {
   };
 }
 
-function isAlphaNumeric(str: string) {
+function isAlphaNumeric(str: string): boolean {
   var code, i, len;
 
   for (i = 0, len = str.length; i < len; i++) {
@@ -60,7 +60,7 @@ function isAlphaNumeric(str: string) {
   return true;
 }
 
-function parseTextForPrompt(text: string): string {
+function sanitizeTextForPrompt(text: string): string {
   let output = [];
   for (let i = 0; i < text.length; i++) {
     if (isAlphaNumeric(text[i]) || " '.!?,".includes(text[i])) {
@@ -77,7 +77,7 @@ function parseTextForPrompt(text: string): string {
 function parseGmailMessageResource(message: GmailMessageResource): string {
   const { payload } = message;
   if (payload.mimeType === "text/plain") {
-    return parseTextForPrompt(payload.body.data);
+    return sanitizeTextForPrompt(payload.body.data);
   }
   console.log("Can only parse text/plain mime type"); // TODO: handle other mime types and nested parts
   return "";
