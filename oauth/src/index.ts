@@ -144,5 +144,12 @@ export const handleRequest: HandleRequest = async function (
   }
   await kvPost(userId, JSON.stringify(postBody)); // save json string with access and refresh token
   await sendTextMessage("You have successfully logged in!", userId, botToken);
-  return { status: 200 }; // TODO: return webpage that says "You have successfully logged in!"
+  return {
+    // TODO: Create script to auto close the tab
+    status: 200,
+    body: "<html><body><h1>You have successfully logged in!</h1></body></html>",
+    headers: {
+      "Content-Type": "text/html",
+    },
+  };
 };
