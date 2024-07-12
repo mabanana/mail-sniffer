@@ -10,6 +10,11 @@ import {
 const model = InferencingModels.Llama2Chat;
 const TELEGRAM_API_URL = "https://api.telegram.org";
 
+interface RequestBody {
+  message?: GmailMessageResource;
+  chatId?: string;
+}
+
 interface GmailMessagePart {
   partId: string;
   mimeType: string;
@@ -49,26 +54,6 @@ interface GmailMessageResource {
   };
 }
 
-const TEST_GMAIL_MESSAGE: GmailMessageResource = {
-  id: "sample-email-id",
-  threadId: "sample-thread-id",
-  labelIds: ["UNREAD"],
-  snippet: "This is a sample email",
-  historyId: "sample-history-id",
-  internalDate: "2022-01-01T00:00:00.000Z",
-  payload: {
-    partId: "sample-part-id",
-    mimeType: "text/plain",
-    filename: "",
-    headers: [],
-    body: {
-      size: 0,
-      data: "Hello, (@*&%)(*@$)@_i would like to tell you about the new product we have lau@(*nched! \n It is a new product that's very useful and can help you in your daily life. \n its called hello world, would you like to buy one? \n\n Thank you for your time.",
-    },
-    parts: [],
-  },
-};
-
 function isAlphaNumeric(str: string) {
   var code, i, len;
 
@@ -104,6 +89,7 @@ function parseGmailMessageResource(message: GmailMessageResource): string {
   if (payload.mimeType === "text/plain") {
     return parseTextForPrompt(payload.body.data);
   }
+  console.log("Can only parse text/plain mime type"); // TODO: handle other mime types and nested parts
   return "";
 }
 
@@ -128,11 +114,25 @@ export const handleRequest: HandleRequest = async function (
   request: HttpRequest
 ): Promise<HttpResponse> {
   const telegram_bot_token = Config.get("telegram_bot_token");
-  //const requestBody = (await request.json());
-  const chatId = "1132358892"; // TODO: get chatId from requestBody
-  let feed = parseGmailMessageResource(TEST_GMAIL_MESSAGE);
+  let requestBody;
+  try {
+    requestBody = request.json() as RequestBody;
+  } catch (err: any) {
+    if (err.message === undefined) {
+      return { status: 400, body: "Cannot parse request" };
+    } else {
+      return { status: 400, body: "Cannot parse request: " + err.message };
+    }
+  }
+
+  if (requestBody.message === undefined || requestBody.chatId === undefined) {
+    return { status: 400 };
+  }
+  const gmailMessage = requestBody.message;
+  const chatId = requestBody.chatId;
+  let feed = parseGmailMessageResource(gmailMessage);
   let prompt =
-    "I am the recipient of this is an email, please summarize the contents to me in less than 2 sentences: ";
+    "Please summarize the contents of this email in less than 2 sentences: ";
   prompt += feed;
   console.log("prompt: ", prompt);
   const out = Llm.infer(model, prompt, { maxTokens: 1000 });
