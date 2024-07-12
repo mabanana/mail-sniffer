@@ -6,7 +6,7 @@ const OAUTH_CLIENT_ID =
   "136721311837-gbbuar32vp811u532o9907d7nhfelt2g.apps.googleusercontent.com";
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 const OAUTH_REDIRECT_URI = "https://mail-sniffer.fermyon.app/oauth/callback";
-const OAUTH_LOCAL_REDIRECT_URI = "http://localhost:3000/oauth/callback";
+const OAUTH_LOCAL_REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback";
 const OAUTH_RESPONSE_TYPE = "code";
 const OAUTH_ACCESS_TYPE = "offline";
 
