@@ -1,86 +1,33 @@
+import { Kv } from "@fermyon/spin-sdk";
+
 const TELEGRAM_API_URL = "https://api.telegram.org";
 
 interface RequestBody {
-  message?: GmailMessageResource;
-  chatId?: string;
+  body_text: string;
 }
 
-interface GmailMessagePart {
-  partId: string;
-  mimeType: string;
-  filename: string;
-  headers: {
-    name: string;
-    value: string;
-  }[];
-  body: {
-    size: number;
-    data: string;
-  };
+interface kvPostBody {
+  access_token: string;
+  refresh_token: string;
 }
 
-interface GmailHeader {
-  name: string;
-  value: string;
+async function kvPost(key: string, value: string): Promise<void> {
+  const store = Kv.openDefault();
+  store.set(key, value || new Uint8Array().buffer);
+  //console.log("kvPost {key: ", key, ", value: ", value, "}");
 }
 
-interface GmailMessageResource {
-  id: string;
-  threadId: string;
-  labelIds: string[];
-  snippet: string;
-  historyId: string;
-  internalDate: string;
-  payload: {
-    partId: string;
-    mimeType: string;
-    filename: string;
-    headers: GmailHeader[];
-    body: {
-      size: number;
-      data: string;
-    };
-    parts: GmailMessagePart[];
-  };
-}
-
-function isAlphaNumeric(str: string): boolean {
-  var code, i, len;
-
-  for (i = 0, len = str.length; i < len; i++) {
-    code = str.charCodeAt(i);
-    if (
-      !(code > 47 && code < 58) && // numeric (0-9)
-      !(code > 64 && code < 91) && // upper alpha (A-Z)
-      !(code > 96 && code < 123) // lower alpha (a-z)
-    ) {
-      return false;
+async function kvGet(key: string): Promise<string> {
+  const store = Kv.openDefault();
+  const keys = store.getKeys();
+  const decoder = new TextDecoder();
+  const res: Record<string, any> = {};
+  keys.map((k) => {
+    if (k != "kv-credentials") {
+      res[k] = decoder.decode(store.get(k) || new Uint8Array());
     }
-  }
-  return true;
-}
-
-function sanitizeTextForPrompt(text: string): string {
-  let output = [];
-  for (let i = 0; i < text.length; i++) {
-    if (isAlphaNumeric(text[i]) || " '.!?,".includes(text[i])) {
-      output.push(text[i]);
-    } else if ("\n".includes(text[i])) {
-      output.push(" ");
-    } else {
-      output.push("");
-    }
-  }
-  return output.join("");
-}
-
-function parseGmailMessageResource(message: GmailMessageResource): string {
-  const { payload } = message;
-  if (payload.mimeType === "text/plain") {
-    return sanitizeTextForPrompt(payload.body.data);
-  }
-  console.log("Can only parse text/plain mime type"); // TODO: handle other mime types and nested parts
-  return "";
+  });
+  return res[key] || null;
 }
 
 async function sendTextMessage(
@@ -99,4 +46,18 @@ async function sendTextMessage(
     }),
   });
 }
-export { parseGmailMessageResource, sendTextMessage, RequestBody };
+
+async function getDailyUpdate(accessToken: string): Promise<void> {
+  const currentDate = new Date();
+  currentDate.setDate(currentDate.getDate() - 1);
+  const query = "after:" + currentDate.toISOString();
+  return;
+}
+
+async function getAccessToken(userId: string): Promise<string> {
+  const tokenObject: kvPostBody = JSON.parse(await kvGet(userId));
+  // check if the access token is expired, if so, refresh it
+  return tokenObject.access_token;
+}
+
+export { sendTextMessage, RequestBody };
