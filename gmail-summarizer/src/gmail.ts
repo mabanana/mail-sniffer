@@ -1,9 +1,5 @@
 interface listGmailMessageResponse {
-  messages: [
-    {
-      object: GmailMessageResource;
-    }
-  ];
+  messages: GmailMessageResource[];
   nextPageToken: string;
   resultSizeEstimate: number;
 }
@@ -68,7 +64,7 @@ async function getGmailMessage(
 async function getGmailMessageList(
   accessToken: string,
   query: string = ""
-): Promise<GmailMessageResource[]> {
+): Promise<listGmailMessageResponse> {
   const response = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages` +
       new URLSearchParams({
@@ -85,16 +81,41 @@ async function getGmailMessageList(
   if (response.status !== 200) {
     console.log(`Failed to fetch message: ${response.status}`);
   }
-  return (await response.json()) as GmailMessageResource[];
+  return (await response.json()) as listGmailMessageResponse;
 }
 
 function parseGmailMessageResource(message: GmailMessageResource): string {
   const { payload } = message;
+  let out = "";
+  let add = "";
   if (payload.mimeType === "text/plain") {
-    return sanitizeTextForPrompt(payload.body.data);
+    for (var gmailHeader of payload.headers) {
+      if (
+        gmailHeader.name === "Content-Type" &&
+        gmailHeader.value.search("utf-8")
+      ) {
+        add = utf8ToPlainText(payload.body.data);
+      }
+    }
+    out += sanitizeTextForPrompt(add);
   }
-  console.log("Can only parse text/plain mime type"); // TODO: handle other mime types and nested parts
-  return "";
+  if (payload.parts) {
+    for (var part of payload.parts) {
+      if (part.mimeType === "text/plain") {
+        for (var gmailHeader of part.headers) {
+          if (
+            gmailHeader.name === "Content-Type" &&
+            gmailHeader.value.search("utf-8")
+          ) {
+            add = utf8ToPlainText(part.body.data);
+          }
+        }
+        out += sanitizeTextForPrompt(add);
+      }
+    }
+  }
+  //console.log("Can only parse text/plain mime type"); // TODO: handle other mime types and nested parts
+  return out;
 }
 
 function sanitizeTextForPrompt(text: string): string {
@@ -125,6 +146,19 @@ function isAlphaNumeric(str: string): boolean {
     }
   }
   return true;
+}
+
+function utf8ToPlainText(text: string): string {
+  try {
+    // Gmail API returns base64url encoded strings for message bodies
+    // Replace URL-safe chars and decode
+    const base64 = text.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(base64);
+    return decoded;
+  } catch (e) {
+    console.error("Failed to decode UTF-8 text:", e);
+    return "";
+  }
 }
 
 export {

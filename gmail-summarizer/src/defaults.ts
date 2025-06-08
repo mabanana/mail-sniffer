@@ -60,4 +60,4 @@ async function getAccessToken(userId: string): Promise<string> {
   return tokenObject.access_token;
 }
 
-export { sendTextMessage, RequestBody };
+export { sendTextMessage, RequestBody, getAccessToken };
