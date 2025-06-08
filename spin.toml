@@ -9,6 +9,7 @@ version = "0.1.0"
 [variables]
 telegram_bot_token = { required = true }
 google_oauth_client_secret = { required = true }
+cron_job_auth_key = { required = true }
 
 [[trigger.http]]
 route = "/"
@@ -55,4 +56,5 @@ workdir = "gmail-summarizer"
 watch = ["src/**/*.ts"]
 [component.gmail-summarizer.variables]
 telegram_bot_token = "{{ telegram_bot_token }}"
-
+# gemini_api_key = "{{ gemini_api_key }}"
+cron_job_auth_key = "{{ cron_job_auth_key }}"

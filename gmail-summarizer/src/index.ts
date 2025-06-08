@@ -18,11 +18,12 @@ export const handleRequest: HandleRequest = async function (
   request: HttpRequest
 ): Promise<HttpResponse> {
   const telegram_bot_token = Config.get("telegram_bot_token");
+  const cron_job_auth_key = Config.get("cron_job_auth_key");
   const chatId = "1132358892"; // TODO: match to correct chatId using email address maybe
 
-  // if (request.headers["authorization"] !== "Bearer 78Rw8iJF47pUswoOy7RcRi") {
-  //   return { status: 401 };
-  // }
+  if (request.headers["authorization"] !== cron_job_auth_key) {
+    return { status: 401 };
+  }
 
   // Uses requestBody as the gmail message
   // let requestBody;
