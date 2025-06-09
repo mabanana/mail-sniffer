@@ -56,7 +56,7 @@ async function getDailyUpdate(accessToken: string): Promise<void> {
 
 async function getAccessToken(userId: string): Promise<string> {
   const tokenObject: kvPostBody = JSON.parse(await kvGet(userId));
-  // check if the access token is expired, if so, refresh it
+  // TODO check if the access token is expired, if so, refresh it
   return tokenObject.access_token;
 }
 
