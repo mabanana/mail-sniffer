@@ -1,3 +1,5 @@
+import { getAccessToken } from "./defaults";
+
 interface listGmailMessageResponse {
   messages: GmailMessageResource[];
   nextPageToken: string;

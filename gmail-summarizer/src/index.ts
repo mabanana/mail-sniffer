@@ -45,7 +45,16 @@ export const handleRequest: HandleRequest = async function (
   // Get Gmail message from connected Gmail account
 
   const accessToken = await getAccessToken(chatId);
+  if (accessToken === null) {
+    console.log("Access token returned null.");
+    return { status: 400, body: "Cannot access Gmail API" };
+  }
+
   const gmailMessageList = await getGmailMessageList(accessToken);
+  if (gmailMessageList.messages === undefined) {
+    console.log("Cannot fetch gmail message list.");
+    return { status: 400, body: "Cannot access Gmail API" };
+  }
 
   let gmailMessage: string;
   if (gmailMessageList.messages.length > 0) {

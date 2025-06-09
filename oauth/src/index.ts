@@ -18,6 +18,7 @@ export const handleRequest: HandleRequest = async function (
 ): Promise<HttpResponse> {
   const botToken = Config.get("telegram_bot_token");
   const clientSecret = Config.get("google_oauth_client_secret");
+
   const url = new URL(request.headers["spin-full-url"]);
   const code = url.searchParams.get("code");
   const userId = url.searchParams.get("state");
@@ -57,6 +58,11 @@ export const handleRequest: HandleRequest = async function (
     refresh_token:
       tokentAPIResponseJSON["refresh_token"] ??
       storedTokenResponseJSON["refresh_token"],
+    expires_in:
+      Date.now() +
+      (tokentAPIResponseJSON["expires_in"] ??
+        storedTokenResponseJSON["expires_in"]) *
+        1000,
   };
   if (postBody["refresh_token"] === undefined) {
     console.log(
