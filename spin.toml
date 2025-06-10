@@ -10,7 +10,7 @@ version = "0.1.0"
 telegram_bot_token = { required = true }
 google_oauth_client_secret = { required = true }
 cron_job_auth_key = { required = true }
-#google_ai_api_key = { required = true }
+google_ai_api_key = { required = true }
 
 [[trigger.http]]
 route = "/"
@@ -48,7 +48,7 @@ component = "gmail-summarizer"
 
 [component.gmail-summarizer]
 source = "gmail-summarizer/target/gmail-summarizer.wasm"
-allowed_outbound_hosts = [ "https://api.telegram.org", "https://gmail.googleapis.com" ]
+allowed_outbound_hosts = [ "https://api.telegram.org", "https://gmail.googleapis.com", "https://generativelanguage.googleapis.com" ]
 ai_models = ["llama2-chat"]
 key_value_stores = ["default"]
 [component.gmail-summarizer.build]
@@ -57,6 +57,6 @@ workdir = "gmail-summarizer"
 watch = ["src/**/*.ts"]
 [component.gmail-summarizer.variables]
 telegram_bot_token = "{{ telegram_bot_token }}"
-#google_ai_api_key = "{{ gemini_api_key }}"
+google_ai_api_key = "{{ google_ai_api_key }}"
 cron_job_auth_key = "{{ cron_job_auth_key }}"
 google_oauth_client_secret = "{{ google_oauth_client_secret }}"

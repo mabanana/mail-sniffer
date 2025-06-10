@@ -3,8 +3,27 @@ import { Config, HttpRequest, Kv } from "@fermyon/spin-sdk";
 const TELEGRAM_API_URL = "https://api.telegram.org";
 const OAUTH_CLIENT_ID =
   "136721311837-gbbuar32vp811u532o9907d7nhfelt2g.apps.googleusercontent.com";
-const OAUTH_REDIRECT_URI = "https://mail-sniffer.fermyon.app/oauth/callback";
 const OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GEMENI_API_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+interface Part {
+  thought?: boolean;
+  text: string;
+}
+
+interface Candidate {
+  content: {
+    parts: Part[];
+    role: string;
+  };
+}
+
+interface GenerateContentResponse {
+  candidates: Candidate[];
+  modelVersion: string;
+  responseId: string;
+}
 
 interface tokenRefreshResponsePayload {
   access_token: string;
@@ -138,4 +157,37 @@ async function getNewAccessToken(refreshToken: string): Promise<string | null> {
   const responseJson = await response.json();
   return JSON.stringify(responseJson);
 }
-export { sendTextMessage, RequestBody, getAccessToken };
+
+async function inferGemini(prompt: string): Promise<string | null> {
+  const apiKey: string = Config.get("google_ai_api_key");
+
+  var url = GEMENI_API_URL + "?key=" + apiKey;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt,
+            },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (response.status == 200) {
+    const responseJson = (await response.json()) as GenerateContentResponse;
+    const responseText = responseJson.candidates[0].content.parts[0].text;
+    return responseText;
+  } else {
+    console.log(`Failed to get Gemini Response: ${response.status}}`);
+    return null;
+  }
+}
+
+export { sendTextMessage, RequestBody, getAccessToken, inferGemini };
