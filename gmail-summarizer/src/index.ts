@@ -6,7 +6,12 @@ import {
   HttpResponse,
   Config,
 } from "@fermyon/spin-sdk";
-import { sendTextMessage, getUserTokens, inferGemini } from "./defaults";
+import {
+  sendTextMessage,
+  getUserTokens,
+  inferGemini,
+  getAllUsers,
+} from "./defaults";
 import {
   getGmailMessage,
   getGmailMessageList,
@@ -17,35 +22,46 @@ import {
 export const handleRequest: HandleRequest = async function (
   request: HttpRequest
 ): Promise<HttpResponse> {
-  const telegram_bot_token = Config.get("telegram_bot_token");
   const cron_job_auth_key = Config.get("cron_job_auth_key");
-  const chatId = "1132358892"; // TODO: match to correct chatId using email address maybe
   const url = new URL(request.headers["spin-full-url"]);
 
   if (request.headers["authorization"] !== cron_job_auth_key) {
     return { status: 401 };
   }
 
-  // TODO: Get Gmail message from connected Gmail account instead of static chatId
-  const userTokens = await getUserTokens(chatId);
+  for (var userId of await getAllUsers()) {
+    var response = await sendGmailSummary(
+      userId,
+      url.host.startsWith("127.0.0.1")
+    );
+    if (response.status !== 200) {
+      console.log(JSON.stringify(response));
+    }
+  }
+
+  return { status: 200 };
+};
+
+async function sendGmailSummary(userId: string, isLocal: boolean) {
+  const telegram_bot_token = Config.get("telegram_bot_token");
+  const userTokens = await getUserTokens(userId);
   if (userTokens === null) {
     console.log("Access token returned null.");
     return { status: 400, body: "Cannot access Gmail API" };
   }
-  const accessToken = userTokens.access_token;
 
-  const gmailMessageList = await getGmailMessageList(chatId, userTokens);
-  // TODO: force refresh token if response is 401
+  const gmailMessageList = await getGmailMessageList(userId, userTokens);
   if (gmailMessageList.messages === undefined) {
     console.log("Cannot fetch gmail message list.");
     return { status: 400, body: "Cannot access Gmail API" };
   }
 
+  // TODO: get daily breakdown as opposed to just the most recent email
   let gmailMessage: string;
   if (gmailMessageList.messages.length > 0) {
-    let gmailMessageId = gmailMessageList.messages[1].id;
+    let gmailMessageId = gmailMessageList.messages[0].id;
     let gmailMessageResource = await getGmailMessage(
-      chatId,
+      userId,
       gmailMessageId,
       userTokens
     );
@@ -60,7 +76,7 @@ export const handleRequest: HandleRequest = async function (
   prompt = prompt + feed;
   console.log("prompt: ", feed);
 
-  if (!url.host.startsWith("127.0.0.1")) {
+  if (!isLocal) {
     const out = Llm.infer(InferencingModels.Llama2Chat, prompt, {
       maxTokens: 200,
     });
@@ -70,7 +86,7 @@ export const handleRequest: HandleRequest = async function (
     }
     await sendTextMessage(
       "AI LLAMA-2: " + outMessage,
-      chatId,
+      userId,
       telegram_bot_token
     );
     console.log("AI LLAMA-2 Response: " + outMessage);
@@ -80,7 +96,7 @@ export const handleRequest: HandleRequest = async function (
   if (geminiMessage !== null) {
     await sendTextMessage(
       "AI Gemini 2.0 Flash: " + geminiMessage,
-      chatId,
+      userId,
       telegram_bot_token
     );
     console.log("AI Gemini 2.0 Flash Response: " + geminiMessage);
@@ -88,5 +104,5 @@ export const handleRequest: HandleRequest = async function (
     console.log("AI Gemini 2.0 Flash Response: No Response");
   }
 
-  return { status: 200, body: geminiMessage ?? "" };
-};
+  return { status: 200 };
+}

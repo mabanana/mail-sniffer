@@ -42,6 +42,12 @@ interface kvPostBody {
   expires_in?: number;
 }
 
+async function getAllUsers(): Promise<string[]> {
+  const store = Kv.openDefault();
+  const keys = store.getKeys();
+  return keys;
+}
+
 async function kvPost(key: string, value: string): Promise<void> {
   const store = Kv.openDefault();
   store.set(key, value || new Uint8Array().buffer);
@@ -197,4 +203,5 @@ export {
   getUserTokens,
   refreshAccessToken,
   inferGemini,
+  getAllUsers,
 };
