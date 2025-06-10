@@ -1,3 +1,5 @@
+import { Kv } from "@fermyon/spin-sdk";
+
 const OAUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const HELP_MESSAGE =
   "Welcome to Mail Sniffer! Here are the commands you can use:\n\n/login - Login to your Google account\n/help - Get this message";
@@ -9,6 +11,7 @@ const OAUTH_REDIRECT_URI = "https://mail-sniffer.fermyon.app/oauth/callback";
 const OAUTH_LOCAL_REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback";
 const OAUTH_RESPONSE_TYPE = "code";
 const OAUTH_ACCESS_TYPE = "offline";
+const USER_LOGOUT_MESSAGE = "You have been successfully logged out.";
 
 interface TelegramUpdate {
   message?: {
@@ -37,6 +40,20 @@ async function sendTextMessage(
       text: text,
     }),
   });
+}
+
+async function handleLogOut(
+  userId: string,
+  chatId: string,
+  botToken: string
+): Promise<void> {
+  const store = Kv.openDefault();
+  if (store.exists(userId.toString())) {
+    store.delete(userId.toString());
+    await sendTextMessage(USER_LOGOUT_MESSAGE, chatId, botToken);
+  } else {
+    await sendTextMessage("User is not logged in", chatId, botToken);
+  }
 }
 
 async function handleLogin(
@@ -81,8 +98,9 @@ function getOAuthUrl(userId: string, local: boolean = false): string {
   url.searchParams.append("redirect_uri", redirectURI);
   url.searchParams.append("response_type", OAUTH_RESPONSE_TYPE);
   url.searchParams.append("state", userId);
+  // Required for refresh token
   url.searchParams.append("access_type", OAUTH_ACCESS_TYPE);
   return url.toString() + "?" + url.searchParams.toString();
 }
 
-export { handleLogin, handleHelp, TelegramUpdate };
+export { handleLogin, handleHelp, TelegramUpdate, handleLogOut };

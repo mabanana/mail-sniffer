@@ -38,7 +38,7 @@ export const handleRequest: HandleRequest = async function (
       console.log(JSON.stringify(response));
     }
   }
-
+  // do not await everything before returning
   return { status: 200 };
 };
 
