@@ -1,4 +1,4 @@
-import { getAccessToken } from "./defaults";
+import { refreshAccessToken, kvPostBody } from "./defaults";
 
 interface listGmailMessageResponse {
   messages: GmailMessageResource[];
@@ -45,44 +45,59 @@ interface GmailMessageResource {
   };
 }
 
-async function getGmailMessage(
-  messageId: string,
-  accessToken: string
-): Promise<GmailMessageResource> {
-  const response = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+async function gmailFetch(
+  userId: string,
+  uri: string,
+  userTokens: kvPostBody
+): Promise<Response> {
+  const response = await fetch(uri, {
+    headers: {
+      Authorization: `Bearer ${userTokens.access_token}`,
+    },
+  });
+  if (response.status === 401) {
+    var refreshedTokens = await refreshAccessToken(
+      userId,
+      userTokens.refresh_token
+    );
+    if (refreshedTokens !== null) {
+      return gmailFetch(userId, uri, refreshedTokens);
     }
-  );
-  if (response.status !== 200) {
+  } else if (response.status !== 200) {
     console.log(`Failed to fetch message: ${response.status}`);
   }
+
+  return response as Response;
+}
+
+async function getGmailMessage(
+  userId: string,
+  messageId: string,
+  userTokens: kvPostBody
+): Promise<GmailMessageResource> {
+  const response = await gmailFetch(
+    userId,
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`,
+    userTokens
+  );
   return (await response.json()) as GmailMessageResource;
 }
 
 async function getGmailMessageList(
-  accessToken: string,
+  userId: string,
+  userTokens: kvPostBody,
   query: string = ""
 ): Promise<listGmailMessageResponse> {
-  const response = await fetch(
+  const response = await gmailFetch(
+    userId,
     `https://gmail.googleapis.com/gmail/v1/users/me/messages` +
       new URLSearchParams({
         maxResults: "2",
         q: query,
         labelIds: "INBOX,UNREAD",
       }),
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
+    userTokens
   );
-  if (response.status !== 200) {
-    console.log(`Failed to fetch message: ${response.status}`);
-  }
   return (await response.json()) as listGmailMessageResponse;
 }
 

@@ -85,7 +85,7 @@ async function getDailyUpdate(accessToken: string): Promise<void> {
   return;
 }
 
-async function getAccessToken(userId: string): Promise<string | null> {
+async function getUserTokens(userId: string): Promise<kvPostBody | null> {
   let tokenObject: kvPostBody = JSON.parse(await kvGet(userId));
   // check if the access token is expired, if so, refresh it
   if (
@@ -95,19 +95,19 @@ async function getAccessToken(userId: string): Promise<string | null> {
     return await refreshAccessToken(userId, tokenObject["refresh_token"]);
   }
 
-  return tokenObject.access_token;
+  return tokenObject;
 }
 
 async function refreshAccessToken(
   userId: string,
   refreshToken: string
-): Promise<string | null> {
+): Promise<kvPostBody | null> {
   // fetch new access token from google token API
   let tokenAPIResponse;
   tokenAPIResponse = await getNewAccessToken(refreshToken);
 
   if (tokenAPIResponse === null) {
-    return "";
+    return null;
   }
   console.log("Fetch refresh token response: ");
   console.log(tokenAPIResponse + "\n");
@@ -124,7 +124,7 @@ async function refreshAccessToken(
   };
 
   await kvPost(userId, JSON.stringify(postBody));
-  return newAccessToken;
+  return postBody;
 }
 
 async function getNewAccessToken(refreshToken: string): Promise<string | null> {
@@ -190,4 +190,11 @@ async function inferGemini(prompt: string): Promise<string | null> {
   }
 }
 
-export { sendTextMessage, RequestBody, getAccessToken, inferGemini };
+export {
+  sendTextMessage,
+  RequestBody,
+  kvPostBody,
+  getUserTokens,
+  refreshAccessToken,
+  inferGemini,
+};

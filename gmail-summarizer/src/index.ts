@@ -6,7 +6,7 @@ import {
   HttpResponse,
   Config,
 } from "@fermyon/spin-sdk";
-import { sendTextMessage, getAccessToken, inferGemini } from "./defaults";
+import { sendTextMessage, getUserTokens, inferGemini } from "./defaults";
 import {
   getGmailMessage,
   getGmailMessageList,
@@ -27,13 +27,14 @@ export const handleRequest: HandleRequest = async function (
   }
 
   // TODO: Get Gmail message from connected Gmail account instead of static chatId
-  const accessToken = await getAccessToken(chatId);
-  if (accessToken === null) {
+  const userTokens = await getUserTokens(chatId);
+  if (userTokens === null) {
     console.log("Access token returned null.");
     return { status: 400, body: "Cannot access Gmail API" };
   }
+  const accessToken = userTokens.access_token;
 
-  const gmailMessageList = await getGmailMessageList(accessToken);
+  const gmailMessageList = await getGmailMessageList(chatId, userTokens);
   // TODO: force refresh token if response is 401
   if (gmailMessageList.messages === undefined) {
     console.log("Cannot fetch gmail message list.");
@@ -44,8 +45,9 @@ export const handleRequest: HandleRequest = async function (
   if (gmailMessageList.messages.length > 0) {
     let gmailMessageId = gmailMessageList.messages[1].id;
     let gmailMessageResource = await getGmailMessage(
+      chatId,
       gmailMessageId,
-      accessToken
+      userTokens
     );
     gmailMessage = parseGmailMessageResource(gmailMessageResource);
   } else {

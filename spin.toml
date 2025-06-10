@@ -48,7 +48,7 @@ component = "gmail-summarizer"
 
 [component.gmail-summarizer]
 source = "gmail-summarizer/target/gmail-summarizer.wasm"
-allowed_outbound_hosts = [ "https://api.telegram.org", "https://gmail.googleapis.com", "https://generativelanguage.googleapis.com" ]
+allowed_outbound_hosts = [ "https://api.telegram.org", "https://gmail.googleapis.com", "https://generativelanguage.googleapis.com", "https://oauth2.googleapis.com" ]
 ai_models = ["llama2-chat"]
 key_value_stores = ["default"]
 [component.gmail-summarizer.build]
