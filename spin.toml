@@ -59,3 +59,4 @@ watch = ["src/**/*.ts"]
 telegram_bot_token = "{{ telegram_bot_token }}"
 #google_ai_api_key = "{{ gemini_api_key }}"
 cron_job_auth_key = "{{ cron_job_auth_key }}"
+google_oauth_client_secret = "{{ google_oauth_client_secret }}"
