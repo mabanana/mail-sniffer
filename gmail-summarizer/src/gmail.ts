@@ -121,17 +121,26 @@ function parseGmailMessageResource(message: GmailMessageResource): string {
 }
 
 function sanitizeTextForPrompt(text: string): string {
-  let output = [];
-  for (let i = 0; i < text.length; i++) {
-    if (isAlphaNumeric(text[i]) || " '.!?,".includes(text[i])) {
-      output.push(text[i]);
-    } else if ("\n".includes(text[i])) {
-      output.push(" ");
-    } else {
-      output.push("");
-    }
-  }
-  return output.join("");
+  let sanitized = text.replace(/\bhttps?:\/\/[^\s]+|\bwww\.[^\s]+/gi, "");
+
+  // Remove email addresses
+  sanitized = sanitized.replace(
+    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+    ""
+  );
+
+  // Remove non-alphabetical "words" (keep words with at least 2 alpha chars)
+  sanitized = sanitized
+    .split(/\s+/)
+    .filter(
+      (word) => word.length > 1 && /[a-zA-Z]{2,}/.test(word) // at least 2 alpha chars
+    )
+    .join(" ");
+
+  // Optionally, collapse multiple spaces and trim
+  sanitized = sanitized.replace(/\s+/g, " ").trim();
+
+  return sanitized;
 }
 
 function isAlphaNumeric(str: string): boolean {
